@@ -1,29 +1,50 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from 'nestjs-pino';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { DataSource } from 'typeorm';
+import { AppModule } from '../src/app.module';
+import { CORRELATION_ID_HEADER } from '../src/modules/common/constants';
 
-describe('AppController (e2e)', () => {
+const runE2e = process.env.E2E === 'true';
+
+(runE2e ? describe : describe.skip)('App (e2e)', () => {
   let app: INestApplication<App>;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(DataSource)
+      .useValue({
+        query: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
+      })
+      .compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication({ bufferLogs: true });
+    app.useLogger(app.get(Logger));
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterAll(async () => {
+    await app.close();
   });
 
-  afterEach(async () => {
-    await app.close();
+  it('GET /health returns ok', () => {
+    return request(app.getHttpServer())
+      .get('/health')
+      .expect(200)
+      .expect({ status: 'ok', database: 'up' });
+  });
+
+  it('propagates X-Correlation-Id on responses', () => {
+    const correlationId = 'test-correlation-id-123';
+
+    return request(app.getHttpServer())
+      .get('/health')
+      .set(CORRELATION_ID_HEADER, correlationId)
+      .expect(200)
+      .expect('X-Correlation-Id', correlationId);
   });
 });

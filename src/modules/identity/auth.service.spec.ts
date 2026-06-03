@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserEntity } from '../../database/entities/user.entity';
+import { DEMO_BRAND_ID, DEMO_USER_EMAIL } from '../common/demo.constants';
 import { AuthService } from './auth.service';
 import { SessionsRepository } from './repositories/sessions.repository';
 import { UsersRepository } from './repositories/users.repository';
@@ -19,8 +20,8 @@ describe('AuthService', () => {
 
   const user: UserEntity = {
     id: 'user-1',
-    brandId: 'brand-a',
-    email: 'user@example.com',
+    brandId: DEMO_BRAND_ID,
+    email: DEMO_USER_EMAIL,
     passwordHash: '',
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
@@ -68,15 +69,15 @@ describe('AuthService', () => {
       }));
 
       const result = await service.register({
-        brandId: 'brand-a',
-        email: 'User@Example.com',
+        brandId: DEMO_BRAND_ID,
+        email: 'User@PgService.com',
         password: 'password123',
       });
 
       expect(usersRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          brandId: 'brand-a',
-          email: 'user@example.com',
+          brandId: DEMO_BRAND_ID,
+          email: 'user@pgservice.com',
         }),
       );
       expect(
@@ -87,8 +88,8 @@ describe('AuthService', () => {
       ).toBe(true);
       expect(result).toEqual({
         id: 'new-user-id',
-        brandId: 'brand-a',
-        email: 'user@example.com',
+        brandId: DEMO_BRAND_ID,
+        email: DEMO_USER_EMAIL,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       });
@@ -99,8 +100,8 @@ describe('AuthService', () => {
 
       await expect(
         service.register({
-          brandId: 'brand-a',
-          email: 'user@example.com',
+          brandId: DEMO_BRAND_ID,
+          email: 'user@pgservice.com',
           password: 'password123',
         }),
       ).rejects.toBeInstanceOf(ConflictException);
@@ -112,8 +113,8 @@ describe('AuthService', () => {
       usersRepository.findByBrandAndEmail.mockResolvedValue(user);
 
       const result = await service.login({
-        brandId: 'brand-a',
-        email: 'user@example.com',
+        brandId: DEMO_BRAND_ID,
+        email: DEMO_USER_EMAIL,
         password: 'password123',
       });
 
@@ -137,8 +138,8 @@ describe('AuthService', () => {
 
       await expect(
         service.login({
-          brandId: 'brand-a',
-          email: 'user@example.com',
+          brandId: DEMO_BRAND_ID,
+          email: 'user@pgservice.com',
           password: 'wrong-password',
         }),
       ).rejects.toBeInstanceOf(UnauthorizedException);

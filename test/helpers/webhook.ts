@@ -6,6 +6,7 @@ import {
   IDEMPOTENCY_KEY_HEADER,
   WEBHOOK_SIGNATURE_HEADER,
 } from '../../src/modules/common/constants';
+import { DEMO_BRAND_ID } from '../../src/modules/common/demo.constants';
 
 const DEFAULT_SIGNATURE = 'local_webhook_hmac_stub';
 
@@ -28,7 +29,7 @@ export function postWebhook(
 
   return request(app.getHttpServer())
     .post(path)
-    .set(BRAND_ID_HEADER, options.brandId ?? 'brand-a')
+    .set(BRAND_ID_HEADER, options.brandId ?? DEMO_BRAND_ID)
     .set(IDEMPOTENCY_KEY_HEADER, options.idempotencyKey)
     .set(WEBHOOK_SIGNATURE_HEADER, options.signature ?? DEFAULT_SIGNATURE)
     .send(

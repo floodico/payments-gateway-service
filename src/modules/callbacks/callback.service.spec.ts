@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { RawEventStatus } from '../../database/entities/raw-event.entity';
+import { DEMO_BRAND_ID } from '../common/demo.constants';
 import { CallbackService } from './callback.service';
 import { IdempotencyKeysRepository } from './repositories/idempotency-keys.repository';
 import { RawEventsRepository } from './repositories/raw-events.repository';
@@ -13,7 +14,7 @@ describe('CallbackService', () => {
   const pspInput = {
     source: 'psp' as const,
     provider: 'liqpay',
-    brandId: 'brand-a',
+    brandId: DEMO_BRAND_ID,
     idempotencyKey: 'evt-liqpay-001',
     body: { eventType: 'payment.completed', data: { amount: 100 } },
   };
@@ -21,7 +22,7 @@ describe('CallbackService', () => {
   const gspInput = {
     source: 'gsp' as const,
     provider: 'wayforpay',
-    brandId: 'brand-a',
+    brandId: DEMO_BRAND_ID,
     idempotencyKey: 'evt-wayforpay-001',
     body: { eventType: 'payment.completed', data: { amount: 200 } },
   };
@@ -64,6 +65,7 @@ describe('CallbackService', () => {
     idempotencyKeysRepository.findByScope.mockResolvedValue({
       id: 'idem-1',
       key: pspInput.idempotencyKey,
+      source: pspInput.source,
       provider: pspInput.provider,
       brandId: pspInput.brandId,
       rawEventId: 'existing-event-id',
@@ -89,7 +91,7 @@ describe('CallbackService', () => {
     expect(transactionFn).toHaveBeenCalled();
     expect(rawEventsRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        brandId: 'brand-a',
+        brandId: DEMO_BRAND_ID,
         provider: 'wayforpay',
         source: 'gsp',
         eventType: 'payment.completed',
@@ -101,6 +103,7 @@ describe('CallbackService', () => {
     expect(idempotencyKeysRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         key: 'evt-wayforpay-001',
+        source: 'gsp',
         provider: 'wayforpay',
         rawEventId: 'raw-event-1',
       }),
@@ -111,5 +114,33 @@ describe('CallbackService', () => {
       status: 'created',
       duplicate: false,
     });
+  });
+
+  it('treats same key on psp and gsp as separate events', async () => {
+    idempotencyKeysRepository.findByScope.mockResolvedValue(null);
+
+    await service.handleWebhook({
+      ...pspInput,
+      idempotencyKey: 'shared-event-id',
+    });
+    await service.handleWebhook({
+      ...gspInput,
+      provider: 'liqpay',
+      idempotencyKey: 'shared-event-id',
+    });
+
+    expect(idempotencyKeysRepository.findByScope).toHaveBeenCalledWith(
+      DEMO_BRAND_ID,
+      'psp',
+      'liqpay',
+      'shared-event-id',
+    );
+    expect(idempotencyKeysRepository.findByScope).toHaveBeenCalledWith(
+      DEMO_BRAND_ID,
+      'gsp',
+      'liqpay',
+      'shared-event-id',
+    );
+    expect(transactionFn).toHaveBeenCalledTimes(2);
   });
 });

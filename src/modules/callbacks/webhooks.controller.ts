@@ -1,4 +1,5 @@
 import {
+  applyDecorators,
   Body,
   Controller,
   Headers,
@@ -8,9 +9,19 @@ import {
   Res,
 } from '@nestjs/common';
 import {
+  ApiCreatedResponse,
+  ApiHeader,
+  ApiOkResponse,
+  ApiParam,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import {
   BRAND_ID_HEADER,
   IDEMPOTENCY_KEY_HEADER,
+  WEBHOOK_SIGNATURE_HEADER,
 } from '../common/constants';
+import { DEMO_BRAND_ID } from '../common/demo.constants';
 import { CallbackService, resolveBrandId, resolveIdempotencyKey } from './callback.service';
 import { WebhookPayloadDto } from './dto/webhook-payload.dto';
 import { WebhookResponseDto } from './dto/webhook-response.dto';
@@ -20,11 +31,33 @@ import {
   extractSignatureHeader,
 } from './utils/signature.validator';
 
+function ApiWebhookHeaders() {
+  return applyDecorators(
+    ApiHeader({ name: BRAND_ID_HEADER, required: true, example: DEMO_BRAND_ID }),
+    ApiHeader({
+      name: IDEMPOTENCY_KEY_HEADER,
+      required: true,
+      example: 'evt-liqpay-001',
+    }),
+    ApiHeader({
+      name: WEBHOOK_SIGNATURE_HEADER,
+      required: true,
+      example: 'local_webhook_hmac_stub',
+    }),
+  );
+}
+
+@ApiTags('webhooks')
 @Controller('webhooks')
 export class WebhooksController {
   constructor(private readonly callbackService: CallbackService) {}
 
   @Post('psp/:provider')
+  @ApiParam({ name: 'provider', example: 'liqpay' })
+  @ApiCreatedResponse({ type: WebhookResponseDto, description: 'New event' })
+  @ApiOkResponse({ type: WebhookResponseDto, description: 'Duplicate delivery' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing signature' })
+  @ApiWebhookHeaders()
   async handlePsp(
     @Param('provider') provider: string,
     @Headers() headers: Record<string, string | string[] | undefined>,
@@ -35,6 +68,11 @@ export class WebhooksController {
   }
 
   @Post('gsp/:provider')
+  @ApiParam({ name: 'provider', example: 'wayforpay' })
+  @ApiCreatedResponse({ type: WebhookResponseDto, description: 'New event' })
+  @ApiOkResponse({ type: WebhookResponseDto, description: 'Duplicate delivery' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing signature' })
+  @ApiWebhookHeaders()
   async handleGsp(
     @Param('provider') provider: string,
     @Headers() headers: Record<string, string | string[] | undefined>,

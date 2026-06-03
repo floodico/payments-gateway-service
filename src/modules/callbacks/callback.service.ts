@@ -44,6 +44,7 @@ export class CallbackService {
 
     const existing = await this.idempotencyKeysRepository.findByScope(
       brandId,
+      source,
       provider,
       idempotencyKey,
     );
@@ -70,6 +71,7 @@ export class CallbackService {
       if (this.isUniqueViolation(error)) {
         const raced = await this.idempotencyKeysRepository.findByScope(
           brandId,
+          source,
           provider,
           idempotencyKey,
         );
@@ -110,6 +112,7 @@ export class CallbackService {
       await this.idempotencyKeysRepository.create(
         {
           key: idempotencyKey,
+          source,
           provider,
           brandId,
           rawEventId: rawEvent.id,

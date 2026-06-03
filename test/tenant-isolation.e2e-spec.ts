@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'crypto';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { DEMO_BRAND_ID } from '../src/modules/common/demo.constants';
 import { createE2eApp } from './helpers/e2e-app';
 
 const runE2e = process.env.E2E === 'true';
@@ -12,7 +13,7 @@ const runE2e = process.env.E2E === 'true';
   let jwtService: JwtService;
 
   const password = 'password123';
-  const brandAEmail = `tenant-a-${Date.now()}@test.com`;
+  const brandAEmail = `tenant-a-${Date.now()}@pgservice.com`;
   let brandAUserId: string;
 
   beforeAll(async () => {
@@ -22,7 +23,7 @@ const runE2e = process.env.E2E === 'true';
     const registerResponse = await request(app.getHttpServer())
       .post('/auth/register')
       .send({
-        brandId: 'brand-a',
+        brandId: DEMO_BRAND_ID,
         email: brandAEmail,
         password,
       })
@@ -51,7 +52,7 @@ const runE2e = process.env.E2E === 'true';
   it('GET /profile/me returns 200 when JWT brandId matches user tenant', async () => {
     const loginResponse = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ brandId: 'brand-a', email: brandAEmail, password })
+      .send({ brandId: DEMO_BRAND_ID, email: brandAEmail, password })
       .expect(200);
 
     await request(app.getHttpServer())
@@ -60,7 +61,7 @@ const runE2e = process.env.E2E === 'true';
       .expect(200)
       .expect((res) => {
         expect(res.body.id).toBe(brandAUserId);
-        expect(res.body.brandId).toBe('brand-a');
+        expect(res.body.brandId).toBe(DEMO_BRAND_ID);
       });
   });
 });

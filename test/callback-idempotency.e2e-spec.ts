@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { App } from 'supertest/types';
+import { DEMO_BRAND_ID } from '../src/modules/common/demo.constants';
 import { createE2eApp } from './helpers/e2e-app';
 import { postWebhook } from './helpers/webhook';
 
@@ -11,7 +12,8 @@ const runE2e = process.env.E2E === 'true';
   let dataSource: DataSource;
 
   const idempotencyKey = `e2e-liqpay-${Date.now()}`;
-  const brandId = 'brand-a';
+  const brandId = DEMO_BRAND_ID;
+  const source = 'psp';
   const provider = 'liqpay';
   let firstEventId: string;
 
@@ -46,19 +48,44 @@ const runE2e = process.env.E2E === 'true';
     });
   });
 
-  it('database contains exactly one raw_event and one idempotency_key', async () => {
+  it('database contains exactly one raw_event and one idempotency_key for scope', async () => {
     const [rawRows] = await dataSource.query(
       `SELECT COUNT(*)::int AS count FROM raw_events
-       WHERE idempotency_key = $1 AND brand_id = $2 AND provider = $3`,
-      [idempotencyKey, brandId, provider],
+       WHERE idempotency_key = $1 AND brand_id = $2 AND source = $3 AND provider = $4`,
+      [idempotencyKey, brandId, source, provider],
     );
     const [idemRows] = await dataSource.query(
       `SELECT COUNT(*)::int AS count FROM idempotency_keys
-       WHERE key = $1 AND brand_id = $2 AND provider = $3`,
-      [idempotencyKey, brandId, provider],
+       WHERE key = $1 AND brand_id = $2 AND source = $3 AND provider = $4`,
+      [idempotencyKey, brandId, source, provider],
     );
 
     expect(rawRows.count).toBe(1);
     expect(idemRows.count).toBe(1);
+  });
+
+  it('same key on gsp is not duplicate of psp (separate idempotency scope)', async () => {
+    const sharedKey = `e2e-shared-${Date.now()}`;
+
+    const psp = await postWebhook(app, {
+      idempotencyKey: sharedKey,
+      source: 'psp',
+      provider: 'liqpay',
+    }).expect(201);
+
+    const gsp = await postWebhook(app, {
+      idempotencyKey: sharedKey,
+      source: 'gsp',
+      provider: 'liqpay',
+    }).expect(201);
+
+    expect(gsp.body.eventId).not.toBe(psp.body.eventId);
+
+    const [idemRows] = await dataSource.query(
+      `SELECT COUNT(*)::int AS count FROM idempotency_keys
+       WHERE key = $1 AND brand_id = $2 AND provider = $3`,
+      [sharedKey, brandId, 'liqpay'],
+    );
+    expect(idemRows.count).toBe(2);
   });
 });

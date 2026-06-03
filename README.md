@@ -10,6 +10,7 @@ docker compose up --build
 
 - API: http://localhost:3000
 - Health: http://localhost:3000/health
+- OpenAPI UI: http://localhost:3000/api
 
 Stop:
 
@@ -35,7 +36,11 @@ docker compose up postgres -d
 npm run test:e2e
 ```
 
-E2E: health, webhook idempotency (`psp/liqpay`), tenant isolation (`/profile/me`).
+E2E: health, webhook idempotency (`psp/liqpay`, including psp vs gsp scope), tenant isolation.
+
+Docs: [API.md](./API.md), [DECISIONS.md](./DECISIONS.md). OpenAPI: `/api`.
+
+After schema updates: `npm run migration:run` (includes `idempotency_keys.source`).
 
 ## Useful commands
 

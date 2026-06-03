@@ -10,13 +10,16 @@ import {
 import { RawEventEntity } from './raw-event.entity';
 
 @Entity('idempotency_keys')
-@Index(['brandId', 'provider', 'key'], { unique: true })
+@Index(['brandId', 'source', 'provider', 'key'], { unique: true })
 export class IdempotencyKeyEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'varchar', length: 255 })
   key!: string;
+
+  @Column({ type: 'varchar', length: 16 })
+  source!: string;
 
   @Column({ type: 'varchar', length: 64 })
   provider!: string;

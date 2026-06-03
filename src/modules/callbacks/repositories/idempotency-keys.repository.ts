@@ -12,6 +12,7 @@ export class IdempotencyKeysRepository {
 
   findByScope(
     brandId: string,
+    source: string,
     provider: string,
     key: string,
     manager?: EntityManager,
@@ -21,7 +22,7 @@ export class IdempotencyKeysRepository {
       : this.repository;
 
     return repo.findOne({
-      where: { brandId, provider, key },
+      where: { brandId, source, provider, key },
       relations: { rawEvent: true },
     });
   }

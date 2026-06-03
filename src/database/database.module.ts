@@ -23,7 +23,6 @@ import {
         }>('database')!;
 
         const nodeEnv = configService.get<string>('nodeEnv', 'development');
-        const isTest = nodeEnv === 'test';
 
         return {
           type: 'postgres' as const,
@@ -39,7 +38,7 @@ import {
             IdempotencyKeyEntity,
           ],
           migrations: [`${__dirname}/migrations/*{.ts,.js}`],
-          migrationsRun: !isTest,
+          migrationsRun: true,
           synchronize: false,
           logging: nodeEnv === 'development',
         };

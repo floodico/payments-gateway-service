@@ -29,6 +29,7 @@ services:
       DB_NAME: payments_gateway
       JWT_SECRET: local_jwt_hmac_key
       JWT_EXPIRES_IN: 1h
+      WEBHOOK_SIGNATURE_SECRET: local_webhook_hmac_stub
     depends_on:
       postgres:
         condition: service_healthy

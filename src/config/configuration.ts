@@ -8,4 +8,8 @@ export default () => ({
     password: process.env.DB_PASSWORD ?? 'payments',
     name: process.env.DB_NAME ?? 'payments_gateway',
   },
+  jwt: {
+    secret: process.env.JWT_SECRET ?? 'local_jwt_hmac_key',
+    expiresIn: process.env.JWT_EXPIRES_IN ?? '1h',
+  },
 });

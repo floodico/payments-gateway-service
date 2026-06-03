@@ -3,7 +3,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from 'nestjs-pino';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { CORRELATION_ID_HEADER } from '../src/modules/common/constants';
 
@@ -15,12 +14,7 @@ const runE2e = process.env.E2E === 'true';
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    })
-      .overrideProvider(DataSource)
-      .useValue({
-        query: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
-      })
-      .compile();
+    }).compile();
 
     app = moduleFixture.createNestApplication({ bufferLogs: true });
     app.useLogger(app.get(Logger));
@@ -28,7 +22,7 @@ const runE2e = process.env.E2E === 'true';
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('GET /health returns ok', () => {

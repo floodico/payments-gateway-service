@@ -12,4 +12,8 @@ export default () => ({
     secret: process.env.JWT_SECRET ?? 'local_jwt_hmac_key',
     expiresIn: process.env.JWT_EXPIRES_IN ?? '1h',
   },
+  webhook: {
+    signatureSecret:
+      process.env.WEBHOOK_SIGNATURE_SECRET ?? 'local_webhook_hmac_stub',
+  },
 });

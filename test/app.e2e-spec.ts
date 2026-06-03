@@ -1,10 +1,8 @@
 import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { Logger } from 'nestjs-pino';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from '../src/app.module';
 import { CORRELATION_ID_HEADER } from '../src/modules/common/constants';
+import { createE2eApp } from './helpers/e2e-app';
 
 const runE2e = process.env.E2E === 'true';
 
@@ -12,13 +10,7 @@ const runE2e = process.env.E2E === 'true';
   let app: INestApplication<App>;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication({ bufferLogs: true });
-    app.useLogger(app.get(Logger));
-    await app.init();
+    app = await createE2eApp();
   });
 
   afterAll(async () => {

@@ -31,8 +31,11 @@ npm run start:dev
 
 ```bash
 npm test
+docker compose up postgres -d
 npm run test:e2e
 ```
+
+E2E: health, webhook idempotency (`psp/liqpay`), tenant isolation (`/profile/me`).
 
 ## Useful commands
 
